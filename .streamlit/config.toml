@@ -1,45 +1,52 @@
 [theme]
 primaryColor = "#1E88E5"
 backgroundColor = "#FFFFFF"
-secondaryBackgroundColor = "#F0F2F6"
+secondaryBackgroundColor = "#F8F9FA"
 textColor = "#262730"
 font = "sans serif"
-
-[ui]
-hideTopBar = false
 
 [browser]
 gatherUsageStats = false
 
 [server]
-headless = true
-enableCORS = true
 enableXsrfProtection = true
+enableCORS = true
+
+[ui]
+hideTopBar = false
+hideSidebarNav = false
+
+[runner]
+magicEnabled = true
+fastRerenderEnabled = true
 
 [client]
-toolbarMode = "viewer"
-showErrorDetails = true
+toolbarMode = "minimal"
+showErrorDetails = false
 
 [global]
 developmentMode = false
+logLevel = "info"
+unitTest = false
+
+[mapbox]
+
+[deprecation]
+
+[logger]
+
+[client.toolbarMode]
+developer = false
+spectate = false
+
+[pages]
+"app.py" = "Catalogue"
 
 # Personnalisation du menu
 [deprecation]
 showfileUploaderEncoding = false
 showPyplotGlobalUse = false
 
-[runner]
-magicEnabled = false
-installTracer = false
-fixMatplotlib = true
-fastReruns = true
-
 # Documentation des éléments personnalisés
 # https://docs.streamlit.io/library/advanced-features/configuration
-# Cette configuration sera chargée automatiquement par Streamlit Cloud
-
-# Personnalisation du menu
-[pages]
-# Renommer la page principale (app.py) en "Catalogue" dans le menu latéral
-# Note: ceci est une option standard de Streamlit
-displayName = {"app.py" = "Catalogue"} 
+# Cette configuration sera chargée automatiquement par Streamlit Cloud 
