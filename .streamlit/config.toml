@@ -11,6 +11,7 @@ gatherUsageStats = false
 [server]
 enableXsrfProtection = true
 enableCORS = true
+mainScriptPath = "Catalogue.py"
 
 [ui]
 hideTopBar = false
@@ -32,20 +33,14 @@ unitTest = false
 [mapbox]
 
 [deprecation]
+showfileUploaderEncoding = false
+showPyplotGlobalUse = false
 
 [logger]
 
 [client.toolbarMode]
 developer = false
 spectate = false
-
-[pages]
-"app.py" = "Catalogue"
-
-# Personnalisation du menu
-[deprecation]
-showfileUploaderEncoding = false
-showPyplotGlobalUse = false
 
 # Documentation des éléments personnalisés
 # https://docs.streamlit.io/library/advanced-features/configuration
