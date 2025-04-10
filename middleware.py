@@ -1,11 +1,19 @@
 import streamlit as st
 import os
+import sys
 
 # Fonction pour assurer que le menu est cohérent sur toutes les pages
 def init_menu():
     """Initialise un menu latéral cohérent sur toutes les pages."""
-    # Déterminer si nous sommes sur la page principale
-    is_main_page = os.path.basename(st.script_path) == "app.py"
+    # Déterminer si nous sommes sur la page principale de manière plus robuste
+    try:
+        # Essayer d'accéder au script_path (peut ne pas fonctionner dans toutes les versions)
+        script_path = sys.argv[0] if len(sys.argv) > 0 else ""
+        is_main_page = script_path.endswith("app.py") or "app.py" in script_path
+    except:
+        # Méthode de secours : vérifier si nous sommes dans un dossier "pages"
+        current_script = os.path.abspath(__file__)
+        is_main_page = "pages" not in current_script
     
     # Style général pour le menu latéral
     st.markdown("""
@@ -43,25 +51,25 @@ def init_menu():
     </style>
     """, unsafe_allow_html=True)
     
-    # Si nous ne sommes pas sur la page principale, ajouter un bouton pour y retourner
-    if not is_main_page:
-        st.sidebar.markdown("""
-        <div style="margin-bottom: 1rem;">
-            <a href="/" target="_self" style="
-                display: block;
-                text-decoration: none;
-                color: #262730;
-                padding: 0.5rem 1rem;
-                border-radius: 0.3rem;
-                background-color: #f8f9fa;
-                border: 1px solid #e9ecef;
-                text-align: center;
-                font-weight: 600;
-                margin-top: 1rem;">
-                Retour au Catalogue
-            </a>
-        </div>
-        """, unsafe_allow_html=True)
+    # Ajouter systématiquement un bouton pour retourner au catalogue
+    # Même sur la page principale, ce qui peut aider en cas d'erreur dans la détection
+    st.sidebar.markdown("""
+    <div style="margin-bottom: 1rem;">
+        <a href="/" target="_self" style="
+            display: block;
+            text-decoration: none;
+            color: #262730;
+            padding: 0.5rem 1rem;
+            border-radius: 0.3rem;
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            text-align: center;
+            font-weight: 600;
+            margin-top: 1rem;">
+            Catalogue
+        </a>
+    </div>
+    """, unsafe_allow_html=True)
 
 # Ajouter une séparation visuelle dans le menu latéral
 def add_sidebar_separator():
@@ -69,5 +77,22 @@ def add_sidebar_separator():
     st.sidebar.markdown("<hr style='margin: 1rem 0; border: 0; border-top: 1px solid #e9ecef;'>", 
                         unsafe_allow_html=True)
 
-# Initialiser le menu sur chaque page
-init_menu() 
+# Initialiser le menu sur chaque page, en capturant les erreurs si elles se produisent
+try:
+    init_menu()
+except Exception as e:
+    # Afficher une alerte en cas d'erreur, mais ne pas bloquer l'application
+    st.sidebar.warning("Menu personnalisé indisponible")
+    
+    # Essayer d'ajouter un bouton de secours minimal
+    try:
+        st.sidebar.markdown("""
+        <div style="margin: 1rem 0;">
+            <a href="/" style="text-decoration: none; display: block; text-align: center;">
+                Retour au Catalogue
+            </a>
+        </div>
+        """, unsafe_allow_html=True)
+    except:
+        # Si tout échoue, ne rien faire - l'interface standard de Streamlit sera utilisée
+        pass 
