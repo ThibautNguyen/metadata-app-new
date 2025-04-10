@@ -1,21 +1,19 @@
 /* Renommer 'app' en 'Catalogue' dans le menu latéral */
-[data-testid="stSidebarNav"] span:not(:empty) {
-    color: transparent;
+[data-testid="stSidebarNavLinkText"]:contains("app") {
+    visibility: hidden;
     position: relative;
 }
 
-[data-testid="stSidebarNav"] span:not(:empty)::before {
-    content: attr(title);
+[data-testid="stSidebarNavLinkText"]:contains("app")::after {
+    content: "Catalogue";
+    visibility: visible;
     position: absolute;
     left: 0;
-    color: #262730;
+    top: 0;
+    color: inherit;
 }
 
-[data-testid="stSidebarNav"] span[title="app"]::before {
-    content: "Catalogue";
-}
-
-/* Masquer les éléments de navigation inutiles */
+/* Styles généraux pour l'interface */
 #MainMenu {visibility: hidden;}
 footer {visibility: hidden;}
 header {visibility: hidden;}
@@ -26,14 +24,20 @@ section[data-testid="stSidebar"] {
     border-right: 1px solid #e9ecef;
 }
 
-/* Style pour les liens de pages dans le menu */
+div[data-testid="stSidebarContent"] {
+    padding-top: 1rem;
+}
+
+/* Style pour les liens du menu */
+div[data-testid="stSidebarNav"] li {
+    margin-bottom: 0.5rem;
+}
+
 div[data-testid="stSidebarNav"] a {
-    display: block;
-    padding: 0.5rem 1rem;
-    margin-bottom: 0.2rem;
     border-radius: 4px;
+    padding: 0.5rem 1rem;
     text-decoration: none;
-    font-weight: 500;
+    transition: background-color 0.2s;
 }
 
 div[data-testid="stSidebarNav"] a:hover {
