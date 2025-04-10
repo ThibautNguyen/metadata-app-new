@@ -1,4 +1,12 @@
 import streamlit as st
+
+# Configuration de la page - DOIT ÊTRE LE PREMIER APPEL STREAMLIT
+st.set_page_config(
+    page_title="Saisie des Métadonnées",
+    page_icon="📝",
+    layout="wide"
+)
+
 import pandas as pd
 import json
 import os
@@ -14,13 +22,6 @@ import requests
 # Ajouter le chemin parent au path pour pouvoir importer le middleware
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import middleware
-
-# Configuration de la page
-st.set_page_config(
-    page_title="Saisie des Métadonnées",
-    page_icon="📝",
-    layout="wide"
-)
 
 # Titre et description
 st.title("Saisie des Métadonnées")

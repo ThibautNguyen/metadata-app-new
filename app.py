@@ -1,4 +1,12 @@
 import streamlit as st
+
+# Configuration de la page - DOIT ÊTRE LE PREMIER APPEL STREAMLIT
+st.set_page_config(
+    page_title="Catalogue des métadonnées",
+    page_icon="📊",
+    layout="wide"
+)
+
 import pandas as pd
 import json
 import os
@@ -24,13 +32,6 @@ except ImportError:
 
 # Importer le module de renommage des pages (doit être après middleware)
 import pages
-
-# Configuration de la page
-st.set_page_config(
-    page_title="Catalogue des métadonnées",
-    page_icon="📊",
-    layout="wide"
-)
 
 # Titre et description
 st.title("Catalogue des métadonnées")
