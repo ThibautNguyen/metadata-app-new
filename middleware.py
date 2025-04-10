@@ -5,16 +5,6 @@ import sys
 # Fonction pour assurer que le menu est cohérent sur toutes les pages
 def init_menu():
     """Initialise un menu latéral cohérent sur toutes les pages."""
-    # Déterminer si nous sommes sur la page principale de manière plus robuste
-    try:
-        # Essayer d'accéder au script_path (peut ne pas fonctionner dans toutes les versions)
-        script_path = sys.argv[0] if len(sys.argv) > 0 else ""
-        is_main_page = script_path.endswith("app.py") or "app.py" in script_path
-    except:
-        # Méthode de secours : vérifier si nous sommes dans un dossier "pages"
-        current_script = os.path.abspath(__file__)
-        is_main_page = "pages" not in current_script
-    
     # Style général pour le menu latéral
     st.markdown("""
     <style>
@@ -42,17 +32,10 @@ def init_menu():
         div[data-testid="stSidebarNav"] a:hover {
             background-color: rgba(49, 51, 63, 0.1);
         }
-        
-        /* Style du titre pour "Catalogue" */
-        div[data-testid="stSidebarNav"] span:contains("Catalogue") {
-            font-weight: 600;
-            color: #1E88E5;
-        }
     </style>
     """, unsafe_allow_html=True)
     
     # Ajouter systématiquement un bouton pour retourner au catalogue
-    # Même sur la page principale, ce qui peut aider en cas d'erreur dans la détection
     st.sidebar.markdown("""
     <div style="margin-bottom: 1rem;">
         <a href="/" target="_self" style="

@@ -12,6 +12,9 @@ from io import StringIO, BytesIO
 # Importer le middleware pour la gestion du menu
 import middleware
 
+# Importer le module de renommage des pages (doit être après middleware)
+import pages
+
 # Configuration de la page
 st.set_page_config(
     page_title="Catalogue des métadonnées",
