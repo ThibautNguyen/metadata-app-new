@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        /* CSS pour masquer "app" et afficher "Catalogue" à la place */
+        [data-testid="stSidebarNav"] span:empty {
+            display: none;
+        }
+        [data-testid="stSidebarNav"] span:not([title]):contains("app") {
+            visibility: hidden;
+            position: relative;
+        }
+        [data-testid="stSidebarNav"] span:not([title]):contains("app")::after {
+            content: 'Catalogue';
+            visibility: visible;
+            position: absolute;
+            left: 0;
+            top: 0;
+            color: inherit;
+        }
+    </style>
+    <script>
+        // Fonction pour renommer "app" en "Catalogue" dans le menu latéral
+        function renameMenuItems() {
+            // Chercher tous les éléments susceptibles d'afficher "app"
+            const spans = document.querySelectorAll('[data-testid="stSidebarNav"] span');
+            spans.forEach(span => {
+                if (span.textContent === "app") {
+                    span.textContent = "Catalogue";
+                    console.log("Menu renamed: app -> Catalogue");
+                }
+            });
+            
+            // Chercher également les paragraphes qui pourraient contenir "app"
+            const paragraphs = document.querySelectorAll('[data-testid="stSidebarNav"] p');
+            paragraphs.forEach(p => {
+                if (p.textContent === "app") {
+                    p.textContent = "Catalogue";
+                    console.log("Menu paragraph renamed: app -> Catalogue");
+                }
+            });
+        }
+        
+        // Observer les changements du DOM pour appliquer le renommage quand le menu est chargé
+        function setupObserver() {
+            const observer = new MutationObserver(mutations => {
+                for (const mutation of mutations) {
+                    if (mutation.addedNodes.length) {
+                        renameMenuItems();
+                    }
+                }
+            });
+            
+            // Observer tout le document pour les changements
+            observer.observe(document.body, { 
+                childList: true,
+                subtree: true
+            });
+            
+            // Exécuter également une première fois
+            renameMenuItems();
+            
+            // Et à interval régulier pour être sûr
+            setInterval(renameMenuItems, 1000);
+        }
+        
+        // Exécuter une fois le DOM chargé
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', setupObserver);
+        } else {
+            setupObserver();
+        }
+    </script>
+</head>
+<body>
+    <!-- Ce fichier sera injecté automatiquement par Streamlit dans chaque page -->
+</body>
+</html> 

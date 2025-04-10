@@ -24,6 +24,21 @@ showErrorDetails = true
 developmentMode = false
 
 # Personnalisation du menu
+[deprecation]
+showfileUploaderEncoding = false
+showPyplotGlobalUse = false
+
+[runner]
+magicEnabled = false
+installTracer = false
+fixMatplotlib = true
+fastReruns = true
+
+# Documentation des éléments personnalisés
+# https://docs.streamlit.io/library/advanced-features/configuration
+# Cette configuration sera chargée automatiquement par Streamlit Cloud
+
+# Personnalisation du menu
 [pages]
 # Renommer la page principale (app.py) en "Catalogue" dans le menu latéral
 # Note: ceci est une option standard de Streamlit

@@ -12,6 +12,16 @@ from io import StringIO, BytesIO
 # Importer le middleware pour la gestion du menu
 import middleware
 
+# Importer les scripts de personnalisation du frontend
+try:
+    import scripts
+except ImportError:
+    # Créer dynamiquement le dossier scripts et les fichiers nécessaires
+    # s'ils n'existent pas
+    os.makedirs('scripts', exist_ok=True)
+    with open(os.path.join('scripts', '__init__.py'), 'w', encoding='utf-8') as f:
+        f.write('# Initialisation du package scripts\n')
+
 # Importer le module de renommage des pages (doit être après middleware)
 import pages
 
@@ -26,33 +36,46 @@ st.set_page_config(
 st.title("Catalogue des métadonnées")
 st.write("Recherchez et explorez les métadonnées disponibles pour vos analyses et projets.")
 
-# JavaScript pour renommer 'app' en 'Catalogue' dans le menu latéral
-st.markdown("""
+# Solution directe pour renommer "app" en "Catalogue" dans le menu latéral
+st.markdown(
+"""
+<style>
+    /* CSS pour remplacer "app" par "Catalogue" dans le menu latéral */
+    [data-testid="stSidebarNav"] li span:contains("app") {
+        visibility: hidden;
+        position: relative;
+    }
+    [data-testid="stSidebarNav"] li span:contains("app")::after {
+        content: "Catalogue";
+        visibility: visible;
+        position: absolute;
+        left: 0;
+        top: 0;
+    }
+</style>
 <script>
-// Fonction qui remplace "app" par "Catalogue" dans le menu
-function renameAppToCatalogue() {
-    const menuItems = document.querySelectorAll('[data-testid="stSidebarNav"] span');
-    for (let item of menuItems) {
-        if (item.textContent === "app") {
-            item.textContent = "Catalogue";
-            return true;
-        }
+    // JavaScript pour remplacer "app" par "Catalogue" dans le menu latéral
+    function renameMenuItems() {
+        const menuItems = document.querySelectorAll('[data-testid="stSidebarNav"] span, [data-testid="stSidebarNav"] p');
+        menuItems.forEach(item => {
+            if (item.textContent === "app") {
+                item.textContent = "Catalogue";
+                console.log("Menu item renamed: app -> Catalogue");
+            }
+        });
     }
-    return false;
-}
-
-// Essayer de renommer immédiatement, puis continuer à essayer 
-// jusqu'à ce que ça fonctionne ou que le nombre maximal de tentatives soit atteint
-let attempts = 0;
-const maxAttempts = 20;
-const interval = setInterval(function() {
-    if (renameAppToCatalogue() || attempts >= maxAttempts) {
-        clearInterval(interval);
-    }
-    attempts++;
-}, 200);
+    
+    // Exécuter la fonction après que la page soit chargée
+    window.addEventListener('load', function() {
+        // Attendre un peu pour que le menu soit rendu
+        setTimeout(renameMenuItems, 100);
+        
+        // Continuer à vérifier régulièrement (par exemple, toutes les secondes)
+        setInterval(renameMenuItems, 1000);
+    });
 </script>
-""", unsafe_allow_html=True)
+""", unsafe_allow_html=True
+)
 
 # Déterminer si nous sommes en mode de développement local ou déployé
 IS_LOCAL = os.path.exists(os.path.join(os.getcwd(), "SGBD"))

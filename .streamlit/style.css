@@ -1,16 +1,18 @@
-/* Style pour masquer "app" et afficher "Catalogue" à la place */
-[data-testid="stSidebarNav"] ul li:first-child div div span p {
-    visibility: hidden;
+/* Renommer 'app' en 'Catalogue' dans le menu latéral */
+[data-testid="stSidebarNav"] span:not(:empty) {
+    color: transparent;
     position: relative;
 }
 
-[data-testid="stSidebarNav"] ul li:first-child div div span p:after {
-    content: 'Catalogue';
-    visibility: visible;
+[data-testid="stSidebarNav"] span:not(:empty)::before {
+    content: attr(title);
     position: absolute;
     left: 0;
-    font-weight: 600;
-    color: rgb(49, 51, 63);
+    color: #262730;
+}
+
+[data-testid="stSidebarNav"] span[title="app"]::before {
+    content: "Catalogue";
 }
 
 /* Masquer les éléments de navigation inutiles */
@@ -36,4 +38,25 @@ div[data-testid="stSidebarNav"] a {
 
 div[data-testid="stSidebarNav"] a:hover {
     background-color: rgba(49, 51, 63, 0.1);
+}
+
+/* Ajouter un bouton de navigation vers Catalogue */
+.st-emotion-cache-fblp2m.ex0cdmw0 {
+    padding-top: 1rem;
+}
+
+.st-emotion-cache-fblp2m.ex0cdmw0::before {
+    content: "Menu";
+    display: block;
+    padding: 0.5rem 1rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: rgba(49, 51, 63, 0.6);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+/* Améliorer le style des éléments du menu */
+button[kind="navigation"] {
+    margin-bottom: 0.2rem !important;
 } 
