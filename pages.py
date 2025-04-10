@@ -1,18 +1,5 @@
 import streamlit as st
 
-# Configuration du menu de navigation
-st.set_page_config(
-    page_title="Métadonnées",
-    page_icon="📊",
-    layout="wide",
-    initial_sidebar_state="expanded",
-    menu_items={
-        "Get help": None,
-        "Report a bug": None,
-        "About": "Application de gestion des métadonnées"
-    }
-)
-
 # Personnalisation des noms des pages dans le menu latéral
 def rename_pages():
     """Force le renommage des pages dans le menu latéral"""
