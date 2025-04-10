@@ -16,22 +16,20 @@ st.set_page_config(
     layout="wide"
 )
 
-# Personnaliser le menu latéral - renommer 'app' en 'Catalogue'
+# CSS pour renommer "app" en "Catalogue" dans le menu latéral
 st.markdown("""
 <style>
-    /* Renommer 'app' en 'Catalogue' dans le menu latéral */
-    [data-testid="stSidebarNavLinkText"]:contains("app") {
+    [data-testid="stSidebarNavLink"]:nth-of-type(1) p {
         visibility: hidden;
         position: relative;
     }
     
-    [data-testid="stSidebarNavLinkText"]:contains("app")::after {
-        content: "Catalogue";
+    [data-testid="stSidebarNavLink"]:nth-of-type(1) p:after {
+        content: 'Catalogue';
         visibility: visible;
         position: absolute;
-        left: 0;
         top: 0;
-        color: inherit;
+        left: 0;
     }
 </style>
 """, unsafe_allow_html=True)
