@@ -26,6 +26,34 @@ st.set_page_config(
 st.title("Catalogue des métadonnées")
 st.write("Recherchez et explorez les métadonnées disponibles pour vos analyses et projets.")
 
+# JavaScript pour renommer 'app' en 'Catalogue' dans le menu latéral
+st.markdown("""
+<script>
+// Fonction qui remplace "app" par "Catalogue" dans le menu
+function renameAppToCatalogue() {
+    const menuItems = document.querySelectorAll('[data-testid="stSidebarNav"] span');
+    for (let item of menuItems) {
+        if (item.textContent === "app") {
+            item.textContent = "Catalogue";
+            return true;
+        }
+    }
+    return false;
+}
+
+// Essayer de renommer immédiatement, puis continuer à essayer 
+// jusqu'à ce que ça fonctionne ou que le nombre maximal de tentatives soit atteint
+let attempts = 0;
+const maxAttempts = 20;
+const interval = setInterval(function() {
+    if (renameAppToCatalogue() || attempts >= maxAttempts) {
+        clearInterval(interval);
+    }
+    attempts++;
+}, 200);
+</script>
+""", unsafe_allow_html=True)
+
 # Déterminer si nous sommes en mode de développement local ou déployé
 IS_LOCAL = os.path.exists(os.path.join(os.getcwd(), "SGBD"))
 
