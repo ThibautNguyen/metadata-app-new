@@ -9,47 +9,15 @@ import requests
 import base64
 from io import StringIO, BytesIO
 
+# Importer le middleware pour la gestion du menu
+import middleware
+
 # Configuration de la page
 st.set_page_config(
     page_title="Catalogue des métadonnées",
     page_icon="📊",
     layout="wide"
 )
-
-# Customiser l'interface pour masquer "app" et remplacer par "Catalogue" dans le menu latéral
-st.markdown("""
-<style>
-    [data-testid="stSidebarNav"] li:first-child {
-        display: none;
-    }
-    
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
-</style>
-""", unsafe_allow_html=True)
-
-# Ajouter un titre "Catalogue" en haut du menu latéral en CSS
-st.markdown("""
-<style>
-    section[data-testid="stSidebar"] > div > div:first-child {
-        padding-top: 0.5rem;
-    }
-    section[data-testid="stSidebar"] > div > div:first-child::before {
-        content: "Catalogue";
-        margin-left: 20px;
-        font-size: 14px;
-        position: relative;
-        top: 20px;
-        margin-bottom: 15px;
-        font-weight: 600;
-        color: rgba(49, 51, 63, 0.6);
-        text-transform: uppercase;
-        letter-spacing: 0.1em;
-        display: block;
-    }
-</style>
-""", unsafe_allow_html=True)
 
 # Titre et description
 st.title("Catalogue des métadonnées")

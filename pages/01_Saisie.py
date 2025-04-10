@@ -10,6 +10,11 @@ import sys
 import git
 import requests
 
+# Importer le middleware pour la gestion du menu
+# Ajouter le chemin parent au path pour pouvoir importer le middleware
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+import middleware
+
 # Configuration de la page
 st.set_page_config(
     page_title="Saisie des Métadonnées",
