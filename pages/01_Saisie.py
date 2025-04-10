@@ -8,22 +8,59 @@ from io import StringIO
 import csv
 import sys
 import git
+import requests
 
 # Ajout du chemin pour les modules personnalisés
 parent_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 if parent_dir not in sys.path:
     sys.path.append(parent_dir)
 
+# Configuration GitHub
+GITHUB_REPO = "ThibautNguyen/DOCS"
+GITHUB_BRANCH = "main"
+GITHUB_METADATA_PATH = "SGBD/Metadata"
+
 # Configuration de la page
 st.set_page_config(
-    page_title="Saisie des métadonnées",
+    page_title="Saisie des Métadonnées",
     page_icon="📝",
     layout="wide"
 )
 
 # Titre et description
-st.title("Saisie des métadonnées")
-st.write("Utilisez ce formulaire pour ajouter ou modifier des métadonnées.")
+st.title("Saisie des Métadonnées")
+st.markdown("""
+Ce formulaire vous permet de créer des fiches de métadonnées pour vos tables de données.
+Vous pouvez soit saisir manuellement les informations, soit importer des données pour détection automatique.
+""")
+
+# Fonction pour récupérer les dossiers existants dans GitHub
+def get_github_producers():
+    """Récupère la liste des producteurs de données depuis GitHub"""
+    try:
+        api_url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_METADATA_PATH}"
+        
+        # Utiliser un token GitHub si disponible (pour éviter les limites d'API)
+        headers = {}
+        if 'GITHUB_TOKEN' in os.environ:
+            headers['Authorization'] = f"token {os.environ['GITHUB_TOKEN']}"
+            
+        response = requests.get(api_url, headers=headers)
+        
+        if response.status_code == 200:
+            folders = [item["name"] for item in response.json() if item["type"] == "dir"]
+            return folders
+        else:
+            st.warning(f"Impossible de récupérer les dossiers depuis GitHub: {response.status_code} - {response.text}")
+            # Créer une liste par défaut en cas d'échec
+            return ["INSEE", "Météo France", "Ministère de la Transition Ecologique", "Citepa (GES)", "Sit@del (permis de construire)", "Spallian"]
+    except Exception as e:
+        st.warning(f"Erreur lors de la connexion à GitHub: {str(e)}")
+        # Créer une liste par défaut en cas d'échec
+        return ["INSEE", "Météo France", "Ministère de la Transition Ecologique", "Citepa (GES)", "Sit@del (permis de construire)", "Spallian"]
+
+# Récupérer les producteurs existants
+existing_producers = get_github_producers()
 
 # Fonction pour détecter automatiquement le type de données
 def detect_data_type(data_content):
@@ -112,67 +149,64 @@ def convert_data(data_content, data_type):
         return {"content": lines}
 
 # Fonction pour sauvegarder les métadonnées
-def save_metadata(metadata, name, category):
+def save_metadata(metadata, producer, table_name):
     """Sauvegarde les métadonnées dans les dossiers appropriés et synchronise avec Git"""
     # Créer le chemin de dossier si nécessaire
     base_dir = os.path.join(parent_dir, "SGBD", "Metadata")
-    category_dir = os.path.join(base_dir, category)
+    producer_dir = os.path.join(base_dir, producer)
     
-    os.makedirs(category_dir, exist_ok=True)
+    os.makedirs(producer_dir, exist_ok=True)
     
     # Créer nom de fichier sécurisé
-    safe_name = re.sub(r'[^\w\-\.]', '_', name)
-    file_path = os.path.join(category_dir, f"{safe_name}.json")
-    
-    # Ajouter date et heure de création/modification
-    metadata["_metadata"] = {
-        "name": name,
-        "category": category,
-        "last_modified": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    }
+    safe_name = re.sub(r'[^\w\-\.]', '_', table_name)
+    json_path = os.path.join(producer_dir, f"{safe_name}.json")
+    txt_path = os.path.join(producer_dir, f"{safe_name}.txt")
     
     # Sauvegarder en format JSON
-    with open(file_path, 'w', encoding='utf-8') as f:
+    with open(json_path, 'w', encoding='utf-8') as f:
+        # Ajouter des métadonnées sur le producteur et la table
+        metadata["producer"] = producer
+        metadata["table_name"] = table_name
+        
+        # Ajouter la date de création/modification
+        metadata["last_updated"] = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        
         json.dump(metadata, f, indent=2, ensure_ascii=False)
     
     # Créer aussi un fichier TXT pour une lecture rapide
-    txt_path = os.path.join(category_dir, safe_name)
     with open(txt_path, 'w', encoding='utf-8') as f:
-        f.write(f"Nom: {name}\n")
-        f.write(f"Catégorie: {category}\n")
-        f.write(f"Dernière modification: {metadata['_metadata']['last_modified']}\n\n")
+        f.write(f"Nom de la table: {table_name}\n")
+        f.write(f"Producteur: {producer}\n")
+        f.write(f"Description: {metadata.get('description', '')}\n")
+        f.write(f"Source: {metadata.get('source', '')}\n")
+        f.write(f"Année: {metadata.get('year', '')}\n")
+        f.write(f"Contact: {metadata.get('contact', '')}\n")
+        f.write(f"Date de création: {metadata.get('last_updated', '')}\n\n")
         
-        # Écriture des autres métadonnées
-        for key, value in metadata.items():
-            if key != "_metadata":
-                if isinstance(value, dict):
-                    f.write(f"{key}:\n")
-                    for k, v in value.items():
-                        f.write(f"  {k}: {v}\n")
-                elif isinstance(value, list):
-                    f.write(f"{key}:\n")
-                    for item in value:
-                        if isinstance(item, dict):
-                            for k, v in item.items():
-                                f.write(f"  {k}: {v}\n")
-                        else:
-                            f.write(f"  - {item}\n")
-                else:
-                    f.write(f"{key}: {value}\n")
+        f.write("Colonnes:\n")
+        for col in metadata.get('columns', []):
+            f.write(f"- {col['name']} ({col['type']}): {col.get('description', '')}\n")
     
     # Synchroniser avec Git si disponible
     try:
         repo = git.Repo(parent_dir)
-        repo.git.add(file_path)
+        repo.git.add(json_path)
         repo.git.add(txt_path)
-        commit_message = f"Ajout/Mise à jour des métadonnées pour {category}/{name}"
+        commit_message = f"Ajout/Mise à jour des métadonnées pour {producer}/{table_name}"
         repo.git.commit('-m', commit_message)
-        st.success(f"Métadonnées sauvegardées et ajoutées à Git. N'oubliez pas de faire un 'git push' pour synchroniser.")
+        
+        # Pousser les modifications vers GitHub
+        try:
+            repo.git.push("origin", GITHUB_BRANCH)
+            st.success(f"Métadonnées sauvegardées et synchronisées avec GitHub.")
+        except Exception as e:
+            st.success(f"Métadonnées sauvegardées localement. La synchronisation vers GitHub a échoué: {str(e)}")
+            st.info("N'oubliez pas d'exécuter 'git push' pour synchroniser avec GitHub.")
     except Exception as e:
-        st.success(f"Métadonnées sauvegardées avec succès dans {file_path} et {txt_path}")
+        st.success(f"Métadonnées sauvegardées avec succès dans {json_path} et {txt_path}")
         st.warning(f"Note: La synchronisation Git n'a pas fonctionné. Erreur: {str(e)}")
     
-    return file_path
+    return json_path
 
 # Initialisation des variables de session
 if "columns" not in st.session_state:
@@ -182,72 +216,100 @@ if "columns" not in st.session_state:
 tab1, tab2, tab3 = st.tabs(["Saisie manuelle", "Aperçu des données", "Télécharger un fichier"])
 
 with tab1:
-    # Interface utilisateur pour la saisie des métadonnées
-    st.subheader("Informations générales")
+    st.markdown("### Saisie manuelle des métadonnées")
+    st.info("Remplissez tous les champs pour créer une fiche de métadonnées complète.")
+    
+    # Informations de base pour la saisie manuelle
+    manual_name = st.text_input("Nom de la table", help="Nom de la table dans la base de données")
+    
+    # Sélection du producteur de données
+    producer_options = ["Nouveau producteur"] + existing_producers
+    producer_selection = st.selectbox("Producteur de données", producer_options)
+    
+    if producer_selection == "Nouveau producteur":
+        new_producer = st.text_input("Nom du nouveau producteur", 
+                              help="Exemple: INSEE, Météo France, Ministère de la Transition Ecologique")
+        producer = new_producer
+    else:
+        producer = producer_selection
+    
+    # Autres champs de saisie manuelle
+    manual_title = st.text_input("Titre", help="Titre descriptif du jeu de données")
+    manual_description = st.text_area("Description", help="Description détaillée du jeu de données")
+    
+    # Informations supplémentaires
     col1, col2 = st.columns(2)
-
     with col1:
-        metadata_name = st.text_input("Nom du jeu de données", help="Nom unique pour identifier ce jeu de données")
-        
+        manual_source = st.text_input("Source", help="Source des données")
+        manual_year = st.text_input("Année", help="Année des données")
     with col2:
-        # Catégories disponibles (à adapter selon vos besoins)
-        categories = ["Clients", "Produits", "Ventes", "Finance", "Ressources", "Autre"]
-        metadata_category = st.selectbox("Catégorie", categories)
-
-    # Interface dynamique pour la saisie manuelle
-    manual_data = {}
+        manual_contact = st.text_input("Contact", help="Personne à contacter pour ces données")
+        manual_frequency = st.selectbox("Fréquence de mise à jour", 
+                                     ["Annuelle", "Semestrielle", "Trimestrielle", "Mensuelle", "Hebdomadaire", "Journalière", "Temps réel", "Ponctuelle", "Non déterminée"])
     
-    # Champs prédéfinis
-    manual_data["title"] = st.text_input("Titre")
-    manual_data["description"] = st.text_area("Description")
+    # Gestion des champs personnalisés
+    st.subheader("Champs personnalisés")
     
-    # Champs dynamiques
-    st.subheader("Champs supplémentaires")
+    if "custom_fields" not in st.session_state:
+        st.session_state["custom_fields"] = []
     
-    col1, col2 = st.columns(2)
-    custom_fields = {}
+    if st.button("Ajouter un champ personnalisé"):
+        st.session_state["custom_fields"].append({"key": "", "value": ""})
     
-    # Option pour ajouter des champs personnalisés
-    add_field = st.checkbox("Ajouter des champs personnalisés")
+    for i, field in enumerate(st.session_state["custom_fields"]):
+        col1, col2, col3 = st.columns([3, 6, 1])
+        with col1:
+            st.session_state["custom_fields"][i]["key"] = st.text_input(f"Nom du champ {i+1}", value=field["key"], key=f"key_{i}")
+        with col2:
+            st.session_state["custom_fields"][i]["value"] = st.text_input(f"Valeur du champ {i+1}", value=field["value"], key=f"value_{i}")
+        with col3:
+            if st.button("X", key=f"delete_field_{i}"):
+                st.session_state["custom_fields"].pop(i)
+                st.rerun()
     
-    if add_field:
-        with st.container():
-            field_name = st.text_input("Nom du champ")
-            field_value = st.text_input("Valeur")
-            
-            if st.button("Ajouter ce champ"):
-                if field_name and field_name not in manual_data:
-                    custom_fields[field_name] = field_value
-                    st.success(f"Champ '{field_name}' ajouté!")
-    
-    # Afficher les champs personnalisés
-    if custom_fields:
-        st.subheader("Champs personnalisés ajoutés")
-        for name, value in custom_fields.items():
-            st.text(f"{name}: {value}")
-    
-    # Combiner les données
-    manual_data.update(custom_fields)
-    
-    # Bouton de sauvegarde pour l'onglet saisie manuelle
+    # Bouton de sauvegarde pour la saisie manuelle
     if st.button("Sauvegarder les métadonnées (saisie manuelle)"):
-        if not metadata_name:
+        if not manual_name:
             st.error("Veuillez spécifier un nom pour ce jeu de données")
-        elif not manual_data:
-            st.error("Aucune donnée à sauvegarder")
+        elif not producer:
+            st.error("Veuillez sélectionner ou saisir un producteur de données")
         else:
             try:
-                file_path = save_metadata(manual_data, metadata_name, metadata_category)
+                # Créer le dictionnaire de métadonnées
+                manual_metadata = {
+                    "title": manual_title,
+                    "description": manual_description,
+                    "source": manual_source,
+                    "year": manual_year,
+                    "contact": manual_contact,
+                    "frequency": manual_frequency,
+                    "columns": st.session_state["columns"],
+                    "custom_fields": {field["key"]: field["value"] for field in st.session_state["custom_fields"] if field["key"]}
+                }
+                
+                # Sauvegarder les métadonnées
+                file_path = save_metadata(manual_metadata, producer, manual_name)
                 st.success(f"Métadonnées sauvegardées avec succès dans {file_path}")
             except Exception as e:
                 st.error(f"Erreur lors de la sauvegarde: {str(e)}")
 
 with tab2:
-    st.subheader("Détection depuis un aperçu des données")
+    st.markdown("### Détection automatique depuis un aperçu")
+    st.info("Collez un extrait de vos données pour détecter automatiquement la structure.")
     
-    # Champs pour les informations de base
+    # Informations de base pour l'aperçu
     preview_name = st.text_input("Nom du jeu de données (aperçu)", help="Nom unique pour identifier ce jeu de données")
-    preview_category = st.selectbox("Catégorie (aperçu)", categories)
+    
+    # Sélection du producteur pour l'aperçu
+    preview_producer_options = ["Nouveau producteur"] + existing_producers
+    preview_producer_selection = st.selectbox("Producteur de données (aperçu)", preview_producer_options)
+    
+    if preview_producer_selection == "Nouveau producteur":
+        preview_new_producer = st.text_input("Nom du nouveau producteur (aperçu)", 
+                                    help="Exemple: INSEE, Météo France, Ministère de la Transition Ecologique")
+        preview_producer = preview_new_producer
+    else:
+        preview_producer = preview_producer_selection
     
     data_content = st.text_area("Collez vos données ici (CSV, JSON, texte tabulé, etc.)", height=200)
     
@@ -292,9 +354,11 @@ with tab2:
             if st.button("Sauvegarder les métadonnées (aperçu)"):
                 if not preview_name:
                     st.error("Veuillez spécifier un nom pour ce jeu de données")
+                elif not preview_producer:
+                    st.error("Veuillez sélectionner ou saisir un producteur de données")
                 else:
                     try:
-                        file_path = save_metadata(preview_metadata, preview_name, preview_category)
+                        file_path = save_metadata(preview_metadata, preview_producer, preview_name)
                         st.success(f"Métadonnées depuis l'aperçu sauvegardées avec succès dans {file_path}")
                     except Exception as e:
                         st.error(f"Erreur lors de la sauvegarde: {str(e)}")
@@ -307,7 +371,17 @@ with tab3:
     
     # Champs pour les informations de base
     upload_name = st.text_input("Nom du jeu de données (fichier)", help="Nom unique pour identifier ce jeu de données")
-    upload_category = st.selectbox("Catégorie (fichier)", categories)
+    
+    # Sélection du producteur pour le téléchargement
+    upload_producer_options = ["Nouveau producteur"] + existing_producers
+    upload_producer_selection = st.selectbox("Producteur de données (fichier)", upload_producer_options)
+    
+    if upload_producer_selection == "Nouveau producteur":
+        upload_new_producer = st.text_input("Nom du nouveau producteur (fichier)", 
+                                   help="Exemple: INSEE, Météo France, Ministère de la Transition Ecologique")
+        upload_producer = upload_new_producer
+    else:
+        upload_producer = upload_producer_selection
     
     uploaded_file = st.file_uploader("Choisissez un fichier", type=["csv", "json", "txt", "tsv", "xlsx"])
     
@@ -421,12 +495,61 @@ with tab3:
             if st.button("Sauvegarder les métadonnées (fichier)"):
                 if not upload_name:
                     st.error("Veuillez spécifier un nom pour ce jeu de données")
+                elif not upload_producer:
+                    st.error("Veuillez sélectionner ou saisir un producteur de données")
                 else:
                     try:
-                        file_path = save_metadata(upload_metadata, upload_name, upload_category)
+                        file_path = save_metadata(upload_metadata, upload_producer, upload_name)
                         st.success(f"Métadonnées depuis le fichier sauvegardées avec succès dans {file_path}")
                     except Exception as e:
                         st.error(f"Erreur lors de la sauvegarde: {str(e)}")
                 
         except Exception as e:
             st.error(f"Erreur lors du chargement du fichier: {str(e)}")
+
+# Section d'informations générales et formulaire
+st.markdown("---")
+st.markdown("## Colonnes")
+st.info("Ajoutez les colonnes de votre table en précisant leur nom, type et description.")
+
+# Utiliser les colonnes détectées si disponibles
+if "detected_columns" in st.session_state and st.session_state["detected_columns"]:
+    if st.button("Utiliser les colonnes détectées"):
+        st.session_state["columns"] = st.session_state["detected_columns"]
+        st.rerun()
+
+# Bouton pour ajouter une nouvelle colonne
+if st.button("Ajouter une colonne"):
+    st.session_state["columns"].append({
+        "name": "",
+        "type": "varchar",
+        "description": ""
+    })
+    st.rerun()
+
+# Affichage des colonnes existantes
+for i, col in enumerate(st.session_state["columns"]):
+    cols = st.columns([3, 2, 8, 1])
+    with cols[0]:
+        st.session_state["columns"][i]["name"] = st.text_input(
+            f"Nom {i}",
+            value=col["name"],
+            key=f"col_name_{i}"
+        )
+    with cols[1]:
+        st.session_state["columns"][i]["type"] = st.selectbox(
+            f"Type {i}",
+            ["varchar", "integer", "numeric", "boolean", "date", "timestamp", "geometry"],
+            index=["varchar", "integer", "numeric", "boolean", "date", "timestamp", "geometry"].index(col["type"]) if col["type"] in ["varchar", "integer", "numeric", "boolean", "date", "timestamp", "geometry"] else 0,
+            key=f"col_type_{i}"
+        )
+    with cols[2]:
+        st.session_state["columns"][i]["description"] = st.text_input(
+            f"Description {i}",
+            value=col.get("description", ""),
+            key=f"col_desc_{i}"
+        )
+    with cols[3]:
+        if st.button("X", key=f"delete_col_{i}"):
+            st.session_state["columns"].pop(i)
+            st.rerun()
