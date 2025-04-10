@@ -14,12 +14,40 @@ parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if parent_dir not in sys.path:
     sys.path.append(parent_dir)
 
-# Configuration de la page
+# Configuration de la page pour qu'elle apparaisse comme "Catalogue" dans le menu
 st.set_page_config(
     page_title="Catalogue des métadonnées",
     page_icon="📊",
     layout="wide"
 )
+
+# Masquer "app" du menu latéral et remplacer par "Catalogue"
+hide_app_style = """
+<style>
+    span[data-testid="stSidebarNavLinkText"]:nth-child(1) {
+        display: none;
+    }
+    
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+    
+    /* Ajouter "Catalogue" comme premier élément */
+    div[data-testid="stSidebarNav"] > ul {
+        padding-top: 2rem;
+    }
+    div[data-testid="stSidebarNav"] > ul::before {
+        content: "Catalogue";
+        margin-left: 25px;
+        font-size: 14px;
+        font-weight: 600;
+        color: rgba(49, 51, 63, 0.6);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+    }
+</style>
+"""
+st.markdown(hide_app_style, unsafe_allow_html=True)
 
 # Titre et description
 st.title("Catalogue des métadonnées")
@@ -37,29 +65,51 @@ def load_all_metadata():
     
     # Chargement depuis le système de fichiers local
     base_dir = os.path.join(parent_dir, "SGBD", "Metadata")
-    metadata_files_paths = glob.glob(f"{base_dir}/**/*.json", recursive=True)
     
-    for file_path in metadata_files_paths:
-        try:
-            with open(file_path, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-                
-                # Extraire les informations de métadonnées
+    # Vérifier si le répertoire existe
+    if not os.path.exists(base_dir):
+        st.warning(f"Le répertoire {base_dir} n'existe pas. Aucune métadonnée n'a été trouvée.")
+        return []
+    
+    # Utiliser un motif plus profond pour explorer tous les sous-dossiers
+    for root, dirs, files in os.walk(base_dir):
+        for file in files:
+            if file.endswith('.json'):
+                file_path = os.path.join(root, file)
                 producer = os.path.basename(os.path.dirname(file_path))
-                table_name = os.path.basename(file_path).replace('.json', '')
                 
-                # Créer une structure de métadonnées standard
-                meta_info = {
-                    "table_name": table_name,
-                    "producer": producer,
-                    "file_path": file_path,
-                    "title": data.get("title", table_name),
-                    "description": data.get("description", ""),
-                    "last_updated": data.get("last_updated", "N/A")
-                }
-                metadata_files.append(meta_info)
-        except Exception as e:
-            st.warning(f"Erreur lors du chargement de {file_path}: {str(e)}")
+                try:
+                    with open(file_path, 'r', encoding='utf-8') as f:
+                        data = json.load(f)
+                        
+                        # Extraire les informations de métadonnées
+                        table_name = os.path.basename(file_path).replace('.json', '')
+                        
+                        # Déterminer le producteur à partir de l'arborescence
+                        rel_path = os.path.relpath(file_path, base_dir)
+                        path_parts = rel_path.split(os.sep)
+                        producer = path_parts[0] if len(path_parts) > 1 else "Autre"
+                        
+                        # Créer une structure de métadonnées standard
+                        meta_info = {
+                            "table_name": table_name,
+                            "producer": producer,
+                            "file_path": file_path,
+                            "title": data.get("title", table_name),
+                            "description": data.get("description", ""),
+                            "last_updated": data.get("last_updated", "N/A")
+                        }
+                        
+                        metadata_files.append(meta_info)
+                except Exception as e:
+                    st.warning(f"Erreur lors du chargement de {file_path}: {str(e)}")
+    
+    # Si aucun fichier n'a été trouvé, essayons d'accéder directement au dossier Metadata
+    if not metadata_files:
+        st.warning(f"Aucune métadonnée trouvée dans {base_dir}. Vérifiez le chemin du dossier.")
+        # Afficher les chemins explorés pour le diagnostic
+        st.write(f"Chemin absolu: {os.path.abspath(base_dir)}")
+        st.write(f"Dossiers trouvés: {os.listdir(parent_dir) if os.path.exists(parent_dir) else 'Aucun'}")
     
     return metadata_files
 
@@ -118,6 +168,9 @@ with col1:
 
 with col2:
     selected_producer = st.selectbox("Filtrer par producteur", producers)
+
+# Afficher le nombre total de métadonnées
+st.info(f"Nombre total de métadonnées disponibles : {len(metadata_list)}")
 
 # Appliquer les filtres
 filtered_metadata = search_metadata(metadata_list, search_text, selected_producer)
