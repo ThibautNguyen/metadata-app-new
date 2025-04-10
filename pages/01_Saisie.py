@@ -10,16 +10,6 @@ import sys
 import git
 import requests
 
-# Ajout du chemin pour les modules personnalisés
-parent_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-if parent_dir not in sys.path:
-    sys.path.append(parent_dir)
-
-# Configuration GitHub
-GITHUB_REPO = "ThibautNguyen/DOCS"
-GITHUB_BRANCH = "main"
-GITHUB_METADATA_PATH = "SGBD/Metadata"
-
 # Configuration de la page
 st.set_page_config(
     page_title="Saisie des Métadonnées",
@@ -36,28 +26,36 @@ Vous pouvez soit saisir manuellement les informations, soit importer des donnée
 
 # Fonction pour récupérer les dossiers existants dans GitHub
 def get_github_producers():
-    """Récupère la liste des producteurs de données depuis GitHub"""
+    """Récupère la liste des producteurs de données"""
     try:
-        api_url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_METADATA_PATH}"
+        # Liste prédéfinie de producteurs pour éviter les erreurs d'API rate limit
+        default_producers = [
+            "INSEE", 
+            "Météo France", 
+            "Ministère de la Transition Ecologique", 
+            "Citepa (GES)", 
+            "Sit@del (permis de construire)", 
+            "Spallian"
+        ]
         
-        # Utiliser un token GitHub si disponible (pour éviter les limites d'API)
-        headers = {}
-        if 'GITHUB_TOKEN' in os.environ:
-            headers['Authorization'] = f"token {os.environ['GITHUB_TOKEN']}"
-            
-        response = requests.get(api_url, headers=headers)
+        # En local, on peut essayer d'enrichir cette liste avec le contenu du dossier s'il existe
+        local_metadata_dir = os.path.join(os.getcwd(), "SGBD", "Metadata")
+        if os.path.exists(local_metadata_dir):
+            try:
+                # Ajouter les dossiers trouvés localement
+                local_producers = [d for d in os.listdir(local_metadata_dir) 
+                                  if os.path.isdir(os.path.join(local_metadata_dir, d))]
+                # Fusionner les deux listes sans doublons
+                all_producers = list(set(default_producers + local_producers))
+                return sorted(all_producers)
+            except Exception:
+                pass
         
-        if response.status_code == 200:
-            folders = [item["name"] for item in response.json() if item["type"] == "dir"]
-            return folders
-        else:
-            st.warning(f"Impossible de récupérer les dossiers depuis GitHub: {response.status_code} - {response.text}")
-            # Créer une liste par défaut en cas d'échec
-            return ["INSEE", "Météo France", "Ministère de la Transition Ecologique", "Citepa (GES)", "Sit@del (permis de construire)", "Spallian"]
+        return sorted(default_producers)
     except Exception as e:
-        st.warning(f"Erreur lors de la connexion à GitHub: {str(e)}")
-        # Créer une liste par défaut en cas d'échec
-        return ["INSEE", "Météo France", "Ministère de la Transition Ecologique", "Citepa (GES)", "Sit@del (permis de construire)", "Spallian"]
+        st.warning(f"Erreur lors de la récupération des producteurs: {str(e)}")
+        return ["INSEE", "Météo France", "Ministère de la Transition Ecologique", 
+                "Citepa (GES)", "Sit@del (permis de construire)", "Spallian"]
 
 # Récupérer les producteurs existants
 existing_producers = get_github_producers()
@@ -152,9 +150,21 @@ def convert_data(data_content, data_type):
 def save_metadata(metadata, producer, table_name):
     """Sauvegarde les métadonnées dans les dossiers appropriés et synchronise avec Git"""
     # Créer le chemin de dossier si nécessaire
-    base_dir = os.path.join(parent_dir, "SGBD", "Metadata")
+    base_dir = os.path.join(os.getcwd(), "SGBD", "Metadata")
     producer_dir = os.path.join(base_dir, producer)
     
+    # Vérifier si nous sommes en mode déploiement (Streamlit Cloud)
+    is_deployed = not os.path.exists(os.path.dirname(base_dir))
+    
+    if is_deployed:
+        # En mode déploiement, simuler la sauvegarde
+        st.success(f"Mode démonstration : les métadonnées seraient sauvegardées dans {producer}/{table_name}.json")
+        st.info("Dans un environnement de production, les métadonnées seraient synchronisées avec GitHub.")
+        
+        # Retourner un chemin fictif
+        return f"demo_path/{producer}/{table_name}.json"
+    
+    # Créer les répertoires nécessaires
     os.makedirs(producer_dir, exist_ok=True)
     
     # Créer nom de fichier sécurisé
@@ -189,7 +199,15 @@ def save_metadata(metadata, producer, table_name):
     
     # Synchroniser avec Git si disponible
     try:
-        repo = git.Repo(parent_dir)
+        # Vérifier si nous sommes dans un dépôt Git
+        git_dir = os.path.join(os.getcwd(), ".git")
+        if not os.path.exists(git_dir):
+            st.success(f"Métadonnées sauvegardées avec succès dans {json_path}")
+            st.info("Le dossier n'est pas un dépôt Git. Les changements ne seront pas synchronisés automatiquement.")
+            return json_path
+        
+        # Synchroniser avec Git
+        repo = git.Repo(os.getcwd())
         repo.git.add(json_path)
         repo.git.add(txt_path)
         commit_message = f"Ajout/Mise à jour des métadonnées pour {producer}/{table_name}"
@@ -197,7 +215,7 @@ def save_metadata(metadata, producer, table_name):
         
         # Pousser les modifications vers GitHub
         try:
-            repo.git.push("origin", GITHUB_BRANCH)
+            repo.git.push("origin", "main")
             st.success(f"Métadonnées sauvegardées et synchronisées avec GitHub.")
         except Exception as e:
             st.success(f"Métadonnées sauvegardées localement. La synchronisation vers GitHub a échoué: {str(e)}")
