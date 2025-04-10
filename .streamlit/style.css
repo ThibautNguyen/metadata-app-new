@@ -1,0 +1,39 @@
+/* Style pour masquer "app" et afficher "Catalogue" à la place */
+[data-testid="stSidebarNav"] ul li:first-child div div span p {
+    visibility: hidden;
+    position: relative;
+}
+
+[data-testid="stSidebarNav"] ul li:first-child div div span p:after {
+    content: 'Catalogue';
+    visibility: visible;
+    position: absolute;
+    left: 0;
+    font-weight: 600;
+    color: rgb(49, 51, 63);
+}
+
+/* Masquer les éléments de navigation inutiles */
+#MainMenu {visibility: hidden;}
+footer {visibility: hidden;}
+header {visibility: hidden;}
+
+/* Style pour que le menu latéral soit plus propre */
+section[data-testid="stSidebar"] {
+    background-color: #f8f9fa;
+    border-right: 1px solid #e9ecef;
+}
+
+/* Style pour les liens de pages dans le menu */
+div[data-testid="stSidebarNav"] a {
+    display: block;
+    padding: 0.5rem 1rem;
+    margin-bottom: 0.2rem;
+    border-radius: 4px;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+div[data-testid="stSidebarNav"] a:hover {
+    background-color: rgba(49, 51, 63, 0.1);
+} 

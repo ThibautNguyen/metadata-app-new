@@ -26,4 +26,5 @@ developmentMode = false
 # Personnalisation du menu
 [pages]
 # Renommer la page principale (app.py) en "Catalogue" dans le menu latéral
-displayName = {app="Catalogue"} 
+# Note: ceci est une option standard de Streamlit
+displayName = {"app.py" = "Catalogue"} 

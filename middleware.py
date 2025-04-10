@@ -2,6 +2,34 @@ import streamlit as st
 import os
 import sys
 
+# Renommer le menu "app" en "Catalogue" dans le menu latéral
+def rename_app_to_catalogue():
+    """Inject JavaScript to rename 'app' to 'Catalogue'"""
+    js = """
+    <script>
+    const intervalId = setInterval(function() {
+        // Chercher tous les éléments du menu
+        const navItems = document.querySelectorAll('[data-testid="stSidebarNav"] span');
+        
+        let found = false;
+        navItems.forEach(span => {
+            // Trouver le span contenant "app"
+            if (span.innerText === "app") {
+                span.innerText = "Catalogue";
+                console.log("Menu renamed from 'app' to 'Catalogue'");
+                found = true;
+            }
+        });
+        
+        // Arrêter l'intervalle si on a trouvé et remplacé "app"
+        if (found) {
+            clearInterval(intervalId);
+        }
+    }, 100);  // Vérifier toutes les 100ms
+    </script>
+    """
+    st.markdown(js, unsafe_allow_html=True)
+
 # Fonction pour assurer que le menu est cohérent sur toutes les pages
 def init_menu():
     """Initialise un menu latéral cohérent sur toutes les pages."""
@@ -35,7 +63,10 @@ def init_menu():
     </style>
     """, unsafe_allow_html=True)
     
-    # Ajouter systématiquement un bouton pour retourner au catalogue
+    # Appliquer le JavaScript pour renommer la page "app" en "Catalogue"
+    rename_app_to_catalogue()
+    
+    # Ajouter un bouton pour retourner au catalogue
     st.sidebar.markdown("""
     <div style="margin-bottom: 1rem;">
         <a href="/" target="_self" style="
