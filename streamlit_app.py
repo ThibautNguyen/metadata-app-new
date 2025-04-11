@@ -10,7 +10,7 @@ st.set_page_config(
     layout="wide"
 )
 
-# CSS pour renommer "app" en "Catalogue" dans le menu latéral
+# CSS pour le style de l'interface
 st.markdown("""
 <style>
     /* Système de style pour l'interface */
@@ -21,18 +21,16 @@ st.markdown("""
         background-color: #1E88E5;
         color: white;
     }
-    /* Renommer la page principale 'app' en 'Catalogue' */
-    span[data-testid="stSidebarNavLinkText"]:nth-child(1):contains("app") {
-        visibility: hidden;
-        position: relative;
+    /* Style pour le menu latéral */
+    [data-testid="stSidebarNav"] {
+        background-color: #f8f9fa;
     }
-    span[data-testid="stSidebarNavLinkText"]:nth-child(1):contains("app")::after {
-        content: "Catalogue";
-        visibility: visible;
-        position: absolute;
-        left: 0;
-        top: 0;
-        color: inherit;
+    [data-testid="stSidebarNav"] a {
+        color: #262730;
+    }
+    [data-testid="stSidebarNav"] a[aria-current="page"] {
+        color: #1E88E5;
+        font-weight: bold;
     }
 </style>
 """, unsafe_allow_html=True)
